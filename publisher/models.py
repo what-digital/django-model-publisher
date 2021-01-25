@@ -114,6 +114,9 @@ class PublisherModelBase(models.Model):
         publish_obj.publisher_is_draft = self.STATE_PUBLISHED
         publish_obj.publisher_published_at = draft_obj.publisher_published_at
 
+        # Project custom: handle unique fields
+        publish_obj = self.publish_unique_fields(publish_obj)
+
         # Link the published obj to the draft version
         # publish_obj.publisher_linked = draft_obj
         publish_obj.save()
@@ -180,6 +183,9 @@ class PublisherModelBase(models.Model):
         draft_obj = self
         publish_obj = self.publisher_linked
 
+        # Get unique fields and values
+        unique_map = self.get_unique_field_values(draft_obj)
+
         draft_obj.publisher_linked = None
         draft_obj.save()
         draft_obj.delete()
@@ -188,6 +194,9 @@ class PublisherModelBase(models.Model):
         draft_obj = publish_obj
         publish_obj = None
 
+        # Set values on unique fields
+        draft_obj = self.set_unique_field_values(draft_obj, unique_map)
+        
         draft_obj.publisher_is_draft = draft_obj.STATE_DRAFT
         draft_obj.save()
         draft_obj.publish()
@@ -196,6 +205,39 @@ class PublisherModelBase(models.Model):
 
     def get_unique_together(self):
         return self._meta.unique_together
+
+    def get_unique_fields(self):
+        field_list = []
+        for field in self._meta.get_fields():
+            if hasattr(field, 'unique') and \
+                field.unique == True and \
+                field.name not in self.publisher_ignore_fields:
+                    field_list.append(field)
+        return field_list
+
+    def get_unique_field_values(self, obj):
+        unique_map = {}
+        for field in self.get_unique_fields():
+            unique_map[field.name] = getattr(obj, field.name)
+        return unique_map
+
+    def set_unique_field_values(self, obj, unique_map):
+        for key, value in unique_map.items():
+            setattr(obj, key, value)
+        return obj
+
+    def publish_unique_fields(self, publish_obj):
+        """
+        Modifies instance fields with unique constraint to enable publishing of those fields,
+        by inserting a '_published' suffix into the value.
+
+        Supports CharField.
+        """
+        for field in self.get_unique_fields():
+            original_value = getattr(publish_obj, field.name)
+            new_value = original_value + '_published'
+            setattr(publish_obj, field.name, new_value)
+        return publish_obj
 
     def get_field(self, field_name):
         # return the actual field (not the db representation of the field)

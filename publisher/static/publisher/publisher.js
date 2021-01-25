@@ -1,6 +1,5 @@
 (function(){
-  var $ = django.jQuery;
-  $(function() {
+  $(function($) {
     $('input:checkbox.publish-checkbox').change(function() {
       var elem = $(this);
       if (elem.is(':checked')) {
@@ -15,4 +14,4 @@
       });
     });
   });
-})();
+})(django.jQuery);
