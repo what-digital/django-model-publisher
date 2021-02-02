@@ -196,7 +196,7 @@ class PublisherModelBase(models.Model):
 
         # Set values on unique fields
         draft_obj = self.set_unique_field_values(draft_obj, unique_map)
-        
+
         draft_obj.publisher_is_draft = draft_obj.STATE_DRAFT
         draft_obj.save()
         draft_obj.publish()
@@ -292,15 +292,15 @@ class PublisherModelBase(models.Model):
         if obj is None:
             obj = self
 
-        model_fields = obj.__class__._meta.get_all_field_names()
+        model_fields = obj.__class__._meta.get_fields()
         for field in model_fields:
             if field in self.publisher_ignore_fields:
                 continue
 
             try:
-                placeholder = getattr(obj, field)
+                placeholder = getattr(obj, field.name)
                 if isinstance(placeholder, Placeholder):
-                    placeholder_fields.append(field)
+                    placeholder_fields.append(field.name)
             except (ObjectDoesNotExist, AttributeError):
                 continue
 

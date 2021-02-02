@@ -1,17 +1,22 @@
 import json
 
 import django
-from django.contrib.admin import ModelAdmin, SimpleListFilter
-from django.contrib import messages
+from django import forms
 from django.conf.urls import url
+from django.contrib import messages
+from django.contrib.admin import ModelAdmin
+from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect
+from django.template import Context
+from django.template import loader
 from django.urls import reverse
-from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.utils.encoding import force_text
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
-from django import forms
-from django.template import loader, Context
+from parler.forms import TranslatableModelForm
 
 
 def make_published(modeladmin, request, queryset):
@@ -317,8 +322,13 @@ try:
 except ImportError:
     pass
 else:
-    class PublisherParlerAdmin(PTranslatableAdmin, PublisherAdmin):
+    class PublisherParlerAdminForm(PublisherForm, TranslatableModelForm):
+        pass
+
+
+    class PublisherParlerAdmin(PublisherAdmin, PTranslatableAdmin):
         change_form_template = 'publisher/parler/change_form.html'
+        form = PublisherParlerAdminForm
 
         def queryset(self, request):
             # hack! We need request.user to check user publish perms
